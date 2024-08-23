@@ -2,8 +2,10 @@
   "name": "seemslegit",
   "version": "1.0.0",
   "description": "A totally legit website generator",
-  "main": "index.js",
+  "main": "index.mjs",
   "scripts": {
+    "start": "node index.mjs",
+    "format": "prettier -w .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -18,5 +20,8 @@
   "dependencies": {
     "express": "^4.19.2",
     "openai": "^4.56.0"
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3"
   }
 }
