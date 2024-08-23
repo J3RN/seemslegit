@@ -4,21 +4,77 @@
     <title>Totally legit website generator</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+
       body {
         font-family: sans-serif;
+        height: 100vh;
       }
+
+      main {
+        max-width: 1000px;
+        margin: 0 auto;
+      }
+
+      h1 {
+        text-align: center;
+      }
+
       label,
       textarea {
         display: block;
+        width: 100%;
+      }
+      label {
+        text-align: center;
+        margin-bottom: 10px;
+      }
+      button {
+        transition: all 0.5s;
+        display: block;
+        border-radius: 10px;
+        border: 5px solid black;
+        background: rgba(0, 0, 0, 0);
+        appearance: none;
+        padding: 8px 10px;
+        font-size: 2rem;
+        margin: 10px auto;
+      }
+      button:hover {
+        background: rgba(0, 0, 0, 1);
+        color: #fff;
       }
     </style>
+    <script>
+      const letters = "0123456789ABCDEF";
+      const generateColor = () =>
+        new Array(6)
+          .fill()
+          .map(() => letters[Math.floor(Math.random() * 16)])
+          .join("");
+      document.addEventListener("DOMContentLoaded", () => {
+        const firstColor = generateColor();
+        const secondColor = generateColor();
+
+        document.body.style = `background: linear-gradient(45deg, #${firstColor}, #${secondColor})`;
+        {
+          /* document.getElementById("submit").style= */
+        }
+      });
+    </script>
   </head>
   <body>
-    <h1>Totally legit website generator</h1>
-    <form action="/generate" method="post">
-      <label for="idea">Tell me about your new business</label>
-      <textarea name="idea" placeholder="My business..." rows="10"></textarea>
-      <button type="Submit">Generate website</button>
-    </form>
+    <main>
+      <h1>Totally legit website generator</h1>
+      <form action="/generate" method="post">
+        <label for="idea">Tell me about your new business</label>
+        <textarea name="idea" placeholder="My business..." rows="10"></textarea>
+        <button id="submit" type="Submit">Generate website</button>
+      </form>
+    </main>
   </body>
 </html>

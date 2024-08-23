@@ -17,7 +17,7 @@ app.post("/generate", (req, res) => {
         {
           role: "system",
           content:
-          "You are generating whimsical websites for peoples' fictitious new companies. Please reply to prompts with the website, including embedded CSS for styling and JavaScript for interactivity (if necessary). Do not wrap the page in markdown backticks and do not include any commentary.",
+            "You are generating whimsical websites for peoples' fictitious new companies. Please reply to prompts with the website, including embedded CSS for styling and JavaScript for interactivity (if necessary). Do not wrap the page in markdown backticks and do not include any commentary.",
         },
         { role: "user", content: req.body.idea },
       ],
