@@ -9,11 +9,12 @@ const openai = new OpenAI();
 
 // Setup PostgreSQL
 const { Client } = pg;
-const connectionString =
-  process.env.NODE_ENV == "dev"
-    ? process.env.DATABASE_URL
-    : process.env.DATABASE_URL + "?sslmode=require";
-const postgresClient = new Client({ connectionString });
+const postgresClient = new Client({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false,
+  },
+});
 await postgresClient.connect();
 
 // Provision database
