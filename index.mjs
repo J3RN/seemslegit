@@ -28,7 +28,7 @@ const port = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static("public"));
 
-const siteMessage = `You are generating whimsical websites for peoples' fictitious new companies. Reply to prompts with the first line being a slug for the website, such as "paw-pay", followed by an empty line, and then the code for the website, including embedded CSS for styling and JavaScript for interactivity (if necessary). Do not wrap the page in markdown backticks and do not include any commentary.`;
+const siteMessage = `You are generating detailed websites for peoples' fictitious new companies. The websites should be funny, whimsical, generally fun to look at and share. Reply to prompts with the first line being a slug for the website, such as "paw-pay", followed by an empty line, and then the code for the website, including embedded CSS for styling and JavaScript for interactivity (if necessary). Do not wrap the page in markdown backticks and do not include any commentary.`;
 
 app.post("/generate", async (req, res) => {
   try {
