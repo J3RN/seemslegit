@@ -30,6 +30,7 @@
       body {
         font-family: "Inter", sans-serif;
         height: 100vh;
+        background: linear-gradient(45deg, #{{firstColor}}, #{{secondColor}});
         padding-top: 10%;
       }
 
@@ -158,16 +159,9 @@
       }
     </style>
     <script>
-      const letters = "0123456789ABCDEF";
-      const generateColor = () =>
-        new Array(6)
-          .fill()
-          .map(() => letters[Math.floor(Math.random() * 16)])
-          .join("");
-
       const busyWork = [
         "Raising venture capital",
-        "Hiring engineers",
+        "Hiring 10X engineers",
         "Going on a vision quest",
         "Talking to shareholders",
         "Renting office space",
@@ -225,10 +219,6 @@
       };
 
       document.addEventListener("DOMContentLoaded", () => {
-        const firstColor = generateColor();
-        const secondColor = generateColor();
-
-        document.body.style = `background: linear-gradient(45deg, #${firstColor}, #${secondColor})`;
         /* document.getElementById("submit").style= */
 
         const form = document.forms[0];
@@ -254,7 +244,7 @@
       <div id="work-box" style="display: none"></div>
       <form>
         <label for="idea">Tell me about your totally legit new business</label>
-        <textarea name="idea" placeholder="My business..." rows="10"></textarea>
+        <textarea name="idea" placeholder="My business..." rows="10" required></textarea>
         <button id="submit" type="Submit">Generate website</button>
       </form>
     </main>

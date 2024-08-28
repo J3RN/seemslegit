@@ -2,6 +2,8 @@ import express from "express";
 import pg from "pg";
 import OpenAI from "openai";
 import dotenv from "dotenv";
+import mustache from "mustache";
+import { readFile } from "node:fs";
 
 dotenv.config();
 
@@ -22,11 +24,23 @@ await postgresClient.query(
   "CREATE TABLE IF NOT EXISTS sites (slug varchar(50) PRIMARY KEY, content text NOT NULL)",
 );
 
+// Configure and start Express
 const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(express.static("public"));
+
+const mustacheWrapper = (path, options, callback) => {
+  readFile(path, "utf8", (err, data) => {
+    if (err) callback(err);
+    else callback(null, mustache.render(data, options));
+  });
+};
+
+app.engine("mustache", mustacheWrapper);
+app.set("views", "./views");
+app.set("view engine", "mustache");
 
 const siteMessage =
   'You are generating detailed websites for fictitious new companies.\
@@ -41,6 +55,20 @@ Items to consider including in the generated sites:\n\
 - "About Us", the story of the company, why it was created, what the mission is.\n\
 - "The Team", the people who work here. Names, jobs, and a snippet of background.\n\
 - "Careers", the jobs that are available at the company, and the benefits that come with working there.';
+
+const letters = "0123456789ABCDEF";
+const generateColor = () =>
+  new Array(6)
+    .fill()
+    .map(() => letters[Math.floor(Math.random() * 16)])
+    .join("");
+
+app.get("/", (req, res) => {
+  res.render("index.html.mustache", {
+    firstColor: generateColor(),
+    secondColor: generateColor(),
+  });
+});
 
 app.post("/generate", async (req, res) => {
   try {
