@@ -82,8 +82,8 @@ app.post("/generate", async (req, res) => {
 
     const reply = completion.choices[0].message.content;
     const breakpoint = reply.indexOf("\n");
-    const baseSlug = reply.slice(0, breakpoint);
-    const site = reply.slice(breakpoint + 1);
+    const baseSlug = reply.slice(0, breakpoint).trim();
+    const site = reply.slice(breakpoint + 1).trim();
 
     let uniqueCounter = 0;
     let slug = baseSlug;
