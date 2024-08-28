@@ -116,7 +116,7 @@ app.get("/site/:slug", async (req, res) => {
     if (result.rows.length == 1) {
       res.send(result.rows[0].content);
     } else {
-      res.status(404).send();
+      res.status(404).render("not_found.html.mustache");
     }
   } catch (e) {
     console.debug(e);
