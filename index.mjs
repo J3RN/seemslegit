@@ -28,7 +28,19 @@ const port = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static("public"));
 
-const siteMessage = `You are generating detailed websites for peoples' fictitious new companies. The websites should be funny, whimsical, generally fun to look at and share. Reply to prompts with the first line being a slug for the website, such as "paw-pay", followed by an empty line, and then the code for the website, including embedded CSS for styling and JavaScript for interactivity (if necessary). Do not wrap the page in markdown backticks and do not include any commentary.`;
+const siteMessage =
+  'You are generating detailed websites for fictitious new companies.\
+ The content for the websites should be funny and whimsical while the styling is sleek and professional.\
+ Reply to prompts with the first line being a slug for the website, such as "paw-pay", followed by an empty line,\
+ and then the code for the website, including embedded CSS for styling and JavaScript for interactivity (if necessary).\
+ Do not wrap the page in markdown backticks and do not include any commentary.\n\
+Items to consider including in the generated sites:\n\
+- Products and services offered by the company, including stand-out features and key differentiations that distinguish the company\'s products from the competition.\n\
+- The issue that the products or services are attempting to solve. Tell potential customers how their lives will be improved.\n\
+- Testimonials, good things people have said about our products or services.\n\
+- "About Us", the story of the company, why it was created, what the mission is.\n\
+- "The Team", the people who work here. Names, jobs, and a snippet of background.\n\
+- "Careers", the jobs that are available at the company, and the benefits that come with working there.';
 
 app.post("/generate", async (req, res) => {
   try {
