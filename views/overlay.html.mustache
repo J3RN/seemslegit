@@ -1,0 +1,87 @@
+<div class="seems-legit-overlay-{{uuid}}">
+  <style>
+   .seems-legit-overlay-{{uuid}} {
+     transition: all 0.5s;
+     background: linear-gradient(45deg, #c6975c, #28afad);
+     font-size: 14pt;
+     padding: 10px;
+     position: fixed;
+     bottom: 10px;
+     right: 10px;
+     border-radius: 10px;
+     border: 2px solid black;
+   }
+
+   #anim-box {
+     padding: 10px;
+   }
+
+   .seems-legit-overlay-{{uuid}} form div {
+     display: flex;
+     gap: 5px;
+   }
+
+   .seems-legit-overlay-{{uuid}} label {
+     display: block;
+     margin-bottom: 10px;
+   }
+
+   .seems-legit-overlay-{{uuid}} input {
+     border-radius: 10px;
+     border: 2px solid black;
+     flex-grow: 1;
+   }
+
+   .seems-legit-overlay-{{uuid}} button {
+     padding: 5px;
+     font-size: inherit;
+     transition: all 0.5s;
+     border-radius: 10px;
+     background: rgba(0,0,0,0);
+     border: 2px solid black;
+   }
+
+   .seems-legit-overlay-{{uuid}} button:hover {
+     background: rgba(0,0,0,1);
+     color: #FFF;
+   }
+  </style>
+
+  {{{ballAnimation}}}
+  <form id="form-{{uuid}}">
+    <label for="refinement">How would you like this site changed?</label>
+    <div>
+      <input type="text" name="refinement" />
+      <button type="submit">Refine</button>
+    </div>
+  </form>
+
+  <script>
+   document.getElementById("form-{{uuid}}").addEventListener("submit", (e) => {
+     e.preventDefault();
+
+     const animBox = document.getElementById("anim-box");
+
+     const form = e.target;
+     const refinement = form.refinement.value;
+     form.refinement.value = "";
+
+     form.style = "display: none";
+     animBox.style = "";
+
+     fetch(window.location + "/refine", {
+       method: "POST",
+       headers: { "Content-Type": "application/json" },
+       body: JSON.stringify({ refinement }),
+     }).then((res) => {
+       if (res.status === 200) {
+         form.style = "";
+         animBox.style = "display:none;";
+         
+         /* Yeah, this works */
+         window.location = window.location;
+       }
+     });
+   })
+  </script>
+</div>

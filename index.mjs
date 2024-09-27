@@ -3,7 +3,7 @@ import pg from "pg";
 import OpenAI from "openai";
 import dotenv from "dotenv";
 import mustache from "mustache";
-import { readFile } from "node:fs";
+import { readFile, readFileSync } from "node:fs";
 
 dotenv.config();
 
@@ -54,12 +54,18 @@ const siteMessage =
  Reply to prompts with the first line being a slug for the website, such as "paw-pay", followed by an empty line.\
  The slug should not end in a TLD like "com", "org", or "net",\
  and then the code for the website, including embedded CSS for styling and JavaScript for interactivity (if necessary).\
- Do not wrap the page in markdown backticks and do not include any commentary.';
+ Do not wrap the page in markdown backticks and do not include any commentary.\
+ Where images are needed, use a url like `/images/descriptive-name-here-256x256`.  No file extension is required or permitted.\
+ Be as descriptive as you want in the description portion of the image URL.  After the last hyphen is a size parameter.\
+ Supported sizes are 256x256, 512x512, and 1024x1024.';
 
 const refinementIntroduction =
   "The user will now provide additional refinements to the generated website.\
  In response to these messages, reply with only the markup for the site including CSS and JavaScript as before,\
  but do not include a slug on the first line";
+
+const ballAnimation = readFileSync("./views/ball-animation.html.mustache");
+const overlay = readFileSync("./views/overlay.html.mustache").toString();
 
 const letters = "0123456789ABCDEF";
 const generateColor = () =>
@@ -70,6 +76,7 @@ const generateColor = () =>
 
 app.get("/", (req, res) => {
   res.render("index.html.mustache", {
+    ballAnimation,
     firstColor: generateColor(),
     secondColor: generateColor(),
   });
@@ -146,8 +153,16 @@ app.get("/site/:slug", async (req, res) => {
       [req.params.slug],
     );
 
+    const uuid = crypto.randomUUID();
+    const renderedOverlay = mustache.render(overlay, {uuid, ballAnimation});
+
     if (result.rows.length == 1) {
-      res.send(result.rows[0].website);
+      // Inject overlay into generated site
+      const website = result.rows[0].website;
+      const site = website.indexOf("</html>");
+      const mutatedWebsite = website.slice(0,site) + renderedOverlay + "</html>";
+
+      res.send(mutatedWebsite);
     } else {
       res.status(404).render("not_found.html.mustache");
     }
@@ -191,12 +206,39 @@ app.post("/site/:slug/refine", async (req, res) => {
       const promptId = await savePrompt(slug, prompt);
       await saveResponse(promptId, reply);
 
-      res.send(reply);
+      res.send();
     } else {
       res.status(404).render("not_found.html.mustache");
     }
   } catch (e) {
     console.debug(e);
+    res.status(500).send();
+  }
+});
+
+app.get("/images/:prompt", async (req, res) => {
+  try {
+    let prompt = req.params.prompt;
+    let size = "256x256";
+
+    if (prompt.endsWith("-1024x1024")) {
+      prompt = prompt.slice(0, prompt.length - 10);
+      size = "1024x1024";
+    } else if (prompt.endsWith("-512x512")) {
+      prompt = prompt.slice(0, prompt.length - 8);
+      size = "512x512";
+    } else if (prompt.endsWith("-256x256")) {
+      prompt = prompt.slice(0, prompt.length - 8);
+      size = "256x256";
+    }
+
+    prompt = prompt.split("-").join(" ");
+
+    openai.images.generate({model: "dall-e-2", prompt, size}).then((resp) => {
+      const url = resp.data[0].url;
+      res.redirect(url);
+    })
+  } catch {
     res.status(500).send();
   }
 });

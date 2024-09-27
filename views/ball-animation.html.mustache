@@ -1,0 +1,87 @@
+<style>
+ :root {
+   --anim-duration: 1s;
+   --anim-ball-size: 20px;
+ }
+
+ @keyframes bounce {
+   0% {
+     top: 0;
+   }
+   50% {
+     top: calc(100% - var(--anim-ball-size));
+   }
+   100% {
+     top: 0;
+   }
+ }
+
+ #anim-box {
+   height: 100px;
+   width: calc(10 * var(--anim-ball-size));
+   position: relative;
+   margin: 0 auto;
+ }
+ .anim-ball {
+   position: absolute;
+   background: #000;
+   height: var(--anim-ball-size);
+   width: var(--anim-ball-size);
+   border-radius: 50%;
+
+   animation-duration: var(--anim-duration);
+   animation-iteration-count: infinite;
+   animation-name: bounce;
+   animation-timing-function: ease-in-out;
+ }
+
+ .anim-ball:nth-child(2) {
+   animation-delay: calc(-1 * var(--anim-duration) / 10);
+   left: var(--anim-ball-size);
+ }
+ .anim-ball:nth-child(3) {
+   animation-delay: calc(-2 * var(--anim-duration) / 10);
+   left: calc(2 * var(--anim-ball-size));
+ }
+ .anim-ball:nth-child(4) {
+   animation-delay: calc(-3 * var(--anim-duration) / 10);
+   left: calc(3 * var(--anim-ball-size));
+ }
+ .anim-ball:nth-child(5) {
+   animation-delay: calc(-4 * var(--anim-duration) / 10);
+   left: calc(4 * var(--anim-ball-size));
+ }
+ .anim-ball:nth-child(6) {
+   animation-delay: calc(-5 * var(--anim-duration) / 10);
+   left: calc(5 * var(--anim-ball-size));
+ }
+ .anim-ball:nth-child(7) {
+   animation-delay: calc(-6 * var(--anim-duration) / 10);
+   left: calc(6 * var(--anim-ball-size));
+ }
+ .anim-ball:nth-child(8) {
+   animation-delay: calc(-7 * var(--anim-duration) / 10);
+   left: calc(7 * var(--anim-ball-size));
+ }
+ .anim-ball:nth-child(9) {
+   animation-delay: calc(-8 * var(--anim-duration) / 10);
+   left: calc(8 * var(--anim-ball-size));
+ }
+ .anim-ball:nth-child(10) {
+   animation-delay: calc(-9 * var(--anim-duration) / 10);
+   left: calc(9 * var(--anim-ball-size));
+ }
+</style>
+
+<div id="anim-box" style="display: none">
+  <div class="anim-ball"></div>
+  <div class="anim-ball"></div>
+  <div class="anim-ball"></div>
+  <div class="anim-ball"></div>
+  <div class="anim-ball"></div>
+  <div class="anim-ball"></div>
+  <div class="anim-ball"></div>
+  <div class="anim-ball"></div>
+  <div class="anim-ball"></div>
+  <div class="anim-ball"></div>
+</div>
