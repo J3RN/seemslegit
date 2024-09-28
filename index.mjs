@@ -5,6 +5,8 @@ import dotenv from "dotenv";
 import mustache from "mustache";
 import { readFile, readFileSync } from "node:fs";
 
+import * as queries from "./queries";
+
 dotenv.config();
 
 const openai = new OpenAI();
@@ -13,22 +15,17 @@ const openai = new OpenAI();
 const { Client } = pg;
 const postgresClient = new Client({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false,
-  },
+  /* ssl: {
+   *   rejectUnauthorized: false,
+   * }, */
 });
 await postgresClient.connect();
 
 // Provision database
-await postgresClient.query(
-  "CREATE TABLE IF NOT EXISTS sites (slug varchar(50) PRIMARY KEY)",
-);
-await postgresClient.query(
-  "CREATE TABLE IF NOT EXISTS prompts (id UUID PRIMARY KEY, inserted_at timestamp NOT NULL, site_slug varchar(50) REFERENCES sites(slug) NOT NULL, prompt text NOT NULL)",
-);
-await postgresClient.query(
-  "CREATE TABLE IF NOT EXISTS responses (id UUID PRIMARY KEY, prompt_id UUID REFERENCES prompts(id) NOT NULL, website text NOT NULL)",
-);
+await queries.createSites();
+await queries.createPrompts();
+await queries.createRespones();
+await queries.createImages();
 
 // Configure and start Express
 const app = express();
@@ -99,9 +96,9 @@ app.post("/generate", async (req, res) => {
     const baseSlug = reply.slice(0, breakpoint).trim();
     const site = reply.slice(breakpoint + 1).trim();
 
-    const slug = await saveSite(baseSlug);
-    const promptId = await savePrompt(slug, initialPrompt);
-    await saveResponse(promptId, site);
+    const slug = await queries.saveSite(baseSlug);
+    const promptId = await queries.savePrompt(slug, initialPrompt);
+    await queries.saveResponse(promptId, site);
 
     res.status(200).send(JSON.stringify({ slug }));
   } catch (e) {
@@ -110,57 +107,20 @@ app.post("/generate", async (req, res) => {
   }
 });
 
-const saveSite = async (baseSlug) => {
-  let uniqueCounter = 0;
-  let slug = baseSlug;
-
-  while (
-    (
-      await postgresClient.query(
-        "INSERT INTO sites (slug) VALUES ($1) ON CONFLICT (slug) DO NOTHING RETURNING slug",
-        [slug],
-      )
-    ).rowCount === 0
-  ) {
-    slug = `${baseSlug}-${++uniqueCounter}`;
-  }
-
-  return slug;
-};
-
-const savePrompt = async (slug, prompt) => {
-  const promptId = crypto.randomUUID();
-  await postgresClient.query(
-    "INSERT INTO prompts (id, inserted_at, site_slug, prompt) VALUES ($1, now(), $2, $3)",
-    [promptId, slug, prompt],
-  );
-  return promptId;
-};
-
-const saveResponse = async (promptId, website) => {
-  const responseId = crypto.randomUUID();
-  await postgresClient.query(
-    "INSERT INTO responses (id, prompt_id, website) VALUES ($1, $2, $3)",
-    [responseId, promptId, website],
-  );
-  return responseId;
-};
-
 app.get("/site/:slug", async (req, res) => {
   try {
-    const result = await postgresClient.query(
-      "SELECT (website) FROM responses INNER JOIN prompts ON responses.prompt_id = prompts.id WHERE prompts.site_slug = $1 AND prompts.inserted_at = (SELECT MAX(inserted_at) FROM prompts WHERE site_slug = $1)",
-      [req.params.slug],
-    );
+    const renderedOverlay = mustache.render(overlay, {
+      uuid: crypto.randomUUID(),
+      ballAnimation,
+    });
+    const savedSite = await queries.fetchSite(req.params.slug);
 
-    const uuid = crypto.randomUUID();
-    const renderedOverlay = mustache.render(overlay, {uuid, ballAnimation});
-
-    if (result.rows.length == 1) {
+    if (savedSite) {
       // Inject overlay into generated site
       const website = result.rows[0].website;
-      const site = website.indexOf("</html>");
-      const mutatedWebsite = website.slice(0,site) + renderedOverlay + "</html>";
+      const injectionSite = website.indexOf("</html>");
+      const mutatedWebsite =
+        website.slice(0, injectionSite) + renderedOverlay + "</html>";
 
       res.send(mutatedWebsite);
     } else {
@@ -177,23 +137,16 @@ app.post("/site/:slug/refine", async (req, res) => {
     const slug = req.params.slug;
     const prompt = req.body.refinement;
 
-    const previousPrompts = await postgresClient.query(
-      "SELECT prompts.prompt AS prompt, responses.website AS website \
-       FROM prompts INNER JOIN responses ON responses.prompt_id = prompts.id \
-       WHERE prompts.site_slug = $1 \
-       ORDER BY inserted_at ASC",
-      [slug],
-    );
-
-    if (previousPrompts.rows.length >= 1) {
+    const previous = await queries.previousRefinements(slug);
+    if (previous.length > 0) {
       const completion = await openai.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [
           { role: "system", content: siteMessage },
-          { role: "user", content: previousPrompts.rows[0].prompt },
-          { role: "assistant", content: previousPrompts.rows[0].website },
+          { role: "user", content: previous[0].prompt },
+          { role: "assistant", content: previous[0].website },
           { role: "system", content: refinementIntroduction },
-          ...previousPrompts.rows.slice(1).flatMap((row) => [
+          ...previous.slice(1).flatMap((row) => [
             { role: "user", content: row.prompt },
             { role: "assistant", content: row.website },
           ]),
@@ -203,8 +156,8 @@ app.post("/site/:slug/refine", async (req, res) => {
 
       const reply = completion.choices[0].message.content;
 
-      const promptId = await savePrompt(slug, prompt);
-      await saveResponse(promptId, reply);
+      const promptId = await queries.savePrompt(slug, prompt);
+      await queries.saveResponse(promptId, reply);
 
       res.send();
     } else {
@@ -218,27 +171,18 @@ app.post("/site/:slug/refine", async (req, res) => {
 
 app.get("/images/:prompt", async (req, res) => {
   try {
-    let prompt = req.params.prompt;
-    let size = "256x256";
+    const prompt = req.params.prompt;
+    let image = queries.fetchImage(prompt);
 
-    if (prompt.endsWith("-1024x1024")) {
-      prompt = prompt.slice(0, prompt.length - 10);
-      size = "1024x1024";
-    } else if (prompt.endsWith("-512x512")) {
-      prompt = prompt.slice(0, prompt.length - 8);
-      size = "512x512";
-    } else if (prompt.endsWith("-256x256")) {
-      prompt = prompt.slice(0, prompt.length - 8);
-      size = "256x256";
+    if (!image) {
+      const imageUrl = await ai.generateImage(prompt);
+      image = await fetch(imageUrl).then((resp) => resp.arrayBuffer());
+      await saveImage(prompt, image);
     }
 
-    prompt = prompt.split("-").join(" ");
-
-    openai.images.generate({model: "dall-e-2", prompt, size}).then((resp) => {
-      const url = resp.data[0].url;
-      res.redirect(url);
-    })
-  } catch {
+    res.set("Content-Type", "image/png").send(image);
+  } catch (e) {
+    console.debug(e);
     res.status(500).send();
   }
 });
